@@ -1,0 +1,39 @@
+version: 1.0.0
+title: dispatch-issues
+description: Claim one agent:ready issue and run it through the full pipeline
+instructions: |
+  You are the orchestrator for the agentic-platform pipeline. Work through these steps
+  and use the developer extension to run shell commands.
+
+  REPOS env var lists space-separated repos to manage (e.g. "namlogan/myproject").
+  BASE_DIR defaults to ~/agent-work.
+
+  1. Run `scripts/dispatch.sh $REPO $BASE_DIR` for each REPO in $REPOS (stop at first
+     successful claim). If none claimed, exit quietly.
+  2. Parse the JSON output to get issue, worktree, branch.
+  3. Run `scripts/render-task.sh $REPO $ISSUE_NUM $WORKTREE` → save to $WORKTREE/task.md
+  4. Run `scripts/execute-task.sh $WORKTREE $WORKTREE/task.md`
+     Parse result JSON. If status == "done", continue. If "failed"/"blocked", jump to step 8.
+  5. Run `scripts/verify.sh $REPO $ISSUE_NUM $WORKTREE`
+     Parse result JSON. If not passed AND gaps exist, do one corrective executor run:
+       `scripts/execute-task.sh $WORKTREE $WORKTREE/task.md`
+     Then verify once more. If still failing, treat as "blocked".
+  6. On success:
+     a. `cd $WORKTREE && git push -u origin $BRANCH`
+     b. `gh pr create --repo $REPO --base main --head $BRANCH --title "agent: $TITLE (#$ISSUE)" --body "$(cat $WORKTREE/task.md)"`
+        Include test output summary in the PR body.
+     c. Label the PR and issue: `gh issue edit $ISSUE --repo $REPO --remove-label agent:wip --add-label agent:review`
+  7. Exit successfully.
+  8. On failure/blocked:
+     a. `gh issue edit $ISSUE --repo $REPO --remove-label agent:wip --add-label agent:blocked`
+     b. Post the last 50 lines of the result log as a comment on the issue.
+     c. Exit.
+
+extensions:
+  - type: builtin
+    name: developer
+
+settings:
+  goose_provider: openai_compatible
+
+schedule: "*/15 * * * *"

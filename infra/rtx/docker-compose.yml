@@ -1,0 +1,57 @@
+version: "3.9"
+
+# RTX 5090 services — start with: docker compose up -d
+# Tailscale must be running; services bind to 0.0.0.0:PORT but are
+# only reachable via Tailscale mesh (no public ports).
+
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-server
+    restart: unless-stopped
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "8000:8000"
+    volumes:
+      - /opt/models:/models
+    command: >
+      --model Qwen/Qwen3-32B-AWQ
+      --max-model-len 32768
+      --gpu-memory-utilization 0.92
+      --served-model-name Qwen/Qwen3-32B-AWQ
+      --trust-remote-code
+
+  # Small fast model for cheap classification/summarisation.
+  vllm-small:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-small
+    restart: unless-stopped
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "8001:8000"
+    volumes:
+      - /opt/models:/models
+    command: >
+      --model Qwen/Qwen3-8B
+      --max-model-len 32768
+      --gpu-memory-utilization 0.06
+      --served-model-name Qwen/Qwen3-8B
+
+  # Embeddings for RAG / cross-repo memory.
+  embeddings:
+    image: michaelf34/infinity:latest
+    container_name: embeddings
+    restart: unless-stopped
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    ports:
+      - "7997:7997"
+    command: >
+      v2 --model-name-or-path BAAI/bge-m3
+         --port 7997
+         --engine torch

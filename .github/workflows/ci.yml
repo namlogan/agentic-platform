@@ -1,0 +1,12 @@
+name: ci
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: [self-hosted, rtx5090]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run repo tests via AGENT.md
+        run: ./scripts/ci-test.sh

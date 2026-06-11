@@ -1,0 +1,21 @@
+version: 1.0.0
+title: verify-pr
+description: Re-run verification on PRs labeled agent:review (called after CI red)
+instructions: |
+  You are the orchestrator. A PR was flagged for re-verification.
+
+  PR_URL env var contains the PR URL, or scan for agent:review PRs in $REPOS.
+
+  1. Identify the PR and the associated issue number (from "Closes #N" in PR body).
+  2. Locate the worktree: $BASE_DIR/$REPO/$ISSUE_NUM  (or re-clone if missing).
+  3. `git fetch origin && git checkout $BRANCH` inside the worktree.
+  4. Run `scripts/verify.sh $REPO $ISSUE_NUM $WORKTREE`.
+  5. If gaps found, run one corrective executor pass, then push and update the PR.
+  6. If still failing after one attempt, label the issue agent:blocked and comment the log.
+
+extensions:
+  - type: builtin
+    name: developer
+
+settings:
+  goose_provider: openai_compatible

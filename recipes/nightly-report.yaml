@@ -1,0 +1,33 @@
+version: 1.0.0
+title: nightly-report
+description: Open a daily digest GitHub issue summarising pipeline activity (runs at 06:30)
+instructions: |
+  You are the orchestrator producing a morning digest for Logan.
+
+  For each repo in $REPOS:
+  1. Count issues completed yesterday (closed, agent:review merged).
+  2. Count issues currently agent:wip or agent:ready (queue depth).
+  3. Count issues labeled agent:blocked.
+  4. Summarise any PRs merged yesterday.
+
+  Produce a GitHub issue titled "🤖 Daily digest — $(date +%Y-%m-%d)" in $PLATFORM_REPO
+  with a markdown table:
+
+  | Repo | Completed yesterday | Queue depth | Blocked |
+  |---|---|---|---|
+  | ...  | ...                 | ...         | ...     |
+
+  Then list blocked issues with their last log comment excerpt.
+
+  Use `gh issue create --repo $PLATFORM_REPO --label status:spec --title "..." --body "..."`.
+
+  This issue is ready for Logan to read at 07:00.
+
+extensions:
+  - type: builtin
+    name: developer
+
+settings:
+  goose_provider: openai_compatible
+
+schedule: "30 6 * * *"

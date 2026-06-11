@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.logan.goose-scheduler</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/goose</string>
+    <string>scheduler</string>
+    <string>run</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/namto/agentic-platform</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- Goose reads OPENAI_API_KEY for OpenAI-compatible providers -->
+    <key>OPENAI_API_KEY</key><string>local</string>
+    <key>GOOSE_PROVIDER__TYPE</key><string>openai</string>
+    <key>GOOSE_PROVIDER__HOST</key><string>http://milai:8000/v1</string>
+    <key>GOOSE_PROVIDER__MODEL</key><string>Qwen/Qwen3-32B-AWQ</string>
+    <key>VLLM_BASE</key><string>http://milai:8000/v1</string>
+    <key>VLLM_MODEL</key><string>Qwen/Qwen3-32B-AWQ</string>
+    <!-- Space-separated list of repos to manage -->
+    <key>REPOS</key><string>namlogan/agentic-platform</string>
+    <key>BASE_DIR</key><string>/Users/namto/agent-work</string>
+    <key>PLATFORM_REPO</key><string>namlogan/agentic-platform</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>/Users/namto/Library/Logs/goose.log</string>
+  <key>StandardErrorPath</key><string>/Users/namto/Library/Logs/goose.err</string>
+</dict></plist>
