@@ -1,14 +1,12 @@
-# Goose provider config template for Mac Mini M1 orchestrator.
-# Copy to ~/.config/goose/config.yaml and fill in GITHUB_TOKEN.
-#
-# Goose uses the OpenAI-compatible API format; point it at vLLM on the RTX server.
-# All Goose reasoning therefore runs on local GPU — no Anthropic API cost.
+# Goose config for Mac Mini M1 orchestrator.
+# Copy to ~/.config/goose/config.yaml
 
-GOOSE_PROVIDER: openai
-OPENAI_API_KEY: "local"  # vLLM doesn't require a real key; any string works
-OPENAI_HOST: "http://milai:8000/v1"
-GOOSE_MODEL: "Qwen/Qwen3-32B-AWQ"
+# Provider: Ollama on RTX server via Tailscale
+GOOSE_PROVIDER: ollama
+GOOSE_MODEL: qwen2.5:7b
+OLLAMA_HOST: http://milai:11434
 
-# Fallback: if vLLM is unreachable and FALLBACK_API=1 is set,
-# Goose will fall back to Anthropic. Set ANTHROPIC_API_KEY in env.
-# ANTHROPIC_API_KEY is read from the keychain via bootstrap.sh.
+# Fallback: uncomment + set ANTHROPIC_API_KEY in keychain if Ollama is down
+# GOOSE_PROVIDER: anthropic
+# GOOSE_MODEL: claude-haiku-4-5-20251001
+# ANTHROPIC_API_KEY is read by Goose from env; load from macOS Keychain in bootstrap.sh
