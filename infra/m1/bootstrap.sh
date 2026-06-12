@@ -43,17 +43,20 @@ else
   log "Goose config already exists at $GOOSE_CONF"
 fi
 
-# ── launchd plist ─────────────────────────────────────────────────────────────
+# ── launchd plists ────────────────────────────────────────────────────────────
 
-PLIST_SRC="$(dirname "$0")/com.logan.goose-scheduler.plist"
-PLIST_DST="$HOME/Library/LaunchAgents/com.logan.goose-scheduler.plist"
-if [[ ! -f "$PLIST_DST" ]]; then
-  cp "$PLIST_SRC" "$PLIST_DST"
-  log "Launchd plist installed at $PLIST_DST"
-  log "Load with: launchctl load $PLIST_DST"
-else
-  log "Launchd plist already at $PLIST_DST"
-fi
+for PLIST_NAME in com.logan.goose-scheduler.plist com.logan.goose-nightly.plist; do
+  PLIST_SRC="$(dirname "$0")/${PLIST_NAME}"
+  PLIST_DST="$HOME/Library/LaunchAgents/${PLIST_NAME}"
+  if [[ ! -f "$PLIST_DST" ]]; then
+    cp "$PLIST_SRC" "$PLIST_DST"
+    log "Launchd plist installed: $PLIST_DST"
+  else
+    log "Launchd plist already at: $PLIST_DST"
+  fi
+done
+log "Load with: launchctl load ~/Library/LaunchAgents/com.logan.goose-scheduler.plist"
+log "           launchctl load ~/Library/LaunchAgents/com.logan.goose-nightly.plist"
 
 # ── clone platform repo ───────────────────────────────────────────────────────
 
@@ -68,5 +71,8 @@ log "Bootstrap complete. Next steps:"
 log "  1. Add SSH pubkey (above) to RTX server authorized_keys"
 log "  2. Run: ssh-keyscan milai >> ~/.ssh/known_hosts"
 log "  3. Test: ssh milai 'hostname'"
-log "  4. Load goose scheduler: launchctl load ~/Library/LaunchAgents/com.logan.goose-scheduler.plist"
+log "  4. Load launchd agents:"
+log "       launchctl load ~/Library/LaunchAgents/com.logan.goose-scheduler.plist"
+log "       launchctl load ~/Library/LaunchAgents/com.logan.goose-nightly.plist"
 log "  5. Verify: launchctl list | grep goose"
+log "  6. Kill switch: launchctl unload ~/Library/LaunchAgents/com.logan.goose-scheduler.plist"

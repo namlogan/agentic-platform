@@ -2,20 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>com.logan.goose-scheduler</string>
+  <key>Label</key><string>com.logan.goose-nightly</string>
   <key>ProgramArguments</key>
   <array>
     <string>/Users/namto/.local/bin/goose</string>
     <string>run</string>
     <string>--recipe</string>
-    <string>/Users/namto/Desktop/agentic-platform/recipes/dispatch-issues.yaml</string>
+    <string>/Users/namto/Desktop/agentic-platform/recipes/nightly-report.yaml</string>
     <string>--no-session</string>
     <string>--max-turns</string>
-    <string>30</string>
+    <string>15</string>
     <string>--params</string>
     <string>REPOS=namlogan/agentic-platform</string>
     <string>--params</string>
-    <string>BASE_DIR=/Users/namto/agent-work</string>
+    <string>PLATFORM_REPO=namlogan/agentic-platform</string>
   </array>
   <key>WorkingDirectory</key><string>/Users/namto/Desktop/agentic-platform</string>
   <key>EnvironmentVariables</key>
@@ -23,15 +23,16 @@
     <key>GOOSE_PROVIDER</key><string>ollama</string>
     <key>GOOSE_MODEL</key><string>qwen2.5:7b</string>
     <key>OLLAMA_HOST</key><string>http://milai:11434</string>
-    <key>VLLM_BASE</key><string>http://milai:11434/v1</string>
-    <key>VLLM_MODEL</key><string>qwen2.5-coder:14b</string>
-    <key>PLATFORM_REPO</key><string>namlogan/agentic-platform</string>
     <key>PATH</key><string>/Users/namto/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>HOME</key><string>/Users/namto</string>
   </dict>
-  <key>StartInterval</key><integer>900</integer>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>6</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
   <key>RunAtLoad</key><false/>
   <key>KeepAlive</key><false/>
-  <key>StandardOutPath</key><string>/Users/namto/Library/Logs/goose-dispatch.log</string>
-  <key>StandardErrorPath</key><string>/Users/namto/Library/Logs/goose-dispatch.err</string>
+  <key>StandardOutPath</key><string>/Users/namto/Library/Logs/goose-nightly.log</string>
+  <key>StandardErrorPath</key><string>/Users/namto/Library/Logs/goose-nightly.err</string>
 </dict></plist>
