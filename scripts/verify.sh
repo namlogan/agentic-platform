@@ -78,8 +78,8 @@ fi
 
 GAPS=()
 
-VLLM_BASE="${VLLM_BASE:-http://milai:8000/v1}"
-VLLM_MODEL="${VLLM_MODEL:-Qwen/Qwen3-32B-AWQ}"
+VLLM_BASE="${VLLM_BASE:-http://milai:11434/v1}"
+VLLM_MODEL="${VLLM_MODEL:-qwen2.5-coder:14b}"
 
 if require curl && require jq; then
   ISSUE_BODY=$(gh issue view "$NUM" --repo "$REPO" --json body -q '.body // ""' 2>/dev/null || true)

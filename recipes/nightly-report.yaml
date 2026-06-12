@@ -28,6 +28,7 @@ extensions:
     name: developer
 
 settings:
-  goose_provider: openai_compatible
+  goose_provider: ollama
+  goose_model: qwen2.5-coder:14b
 
 schedule: "30 6 * * *"
