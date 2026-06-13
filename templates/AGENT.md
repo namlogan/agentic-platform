@@ -3,3 +3,5 @@
 - [x] Add FastAPI endpoint to serve 'Hello from agentic-platform' when '/hello' is requested
 - [x] Implement test for `/hello` endpoint with pytest
 - [x] Run tests with `pytest` and ensure all pass
+- [ ] Add a simple Python FastAPI hello endpoint to the AGENT.md template file at `templates/AGENT.md`.
+- [ ] Create a test file `test_hello_app.py`.
