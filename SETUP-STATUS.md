@@ -1,6 +1,6 @@
 # Agentic Platform — Setup Status
 
-**Last Updated:** 2026-06-12 18:45
+**Last Updated:** 2026-06-13 — M2 ✅ M3 ✅
 
 ---
 
@@ -49,37 +49,36 @@
 
 ---
 
-### 🔄 M2 — Orchestrator Core (IN PROGRESS)
+### ✅ M2 — Orchestrator Core (COMPLETE)
 
 | Check | Status |
 |-------|--------|
 | Goose CLI v1.37.0 installed | ✅ `~/.local/bin/goose` |
-| Goose Desktop App installed | ✅ `/Applications/Goose.app` |
-| Goose config (`~/.config/goose/config.yaml`) | ✅ Provider: `ollama`, Model: `llama3.2:3b` (temp) |
-| Goose connects to RTX Ollama | ✅ (`goose doctor` passes) |
-| Goose tools execute (shell, edit) | ✅ Confirmed with `llama3.2:3b` |
+| Goose config (`~/.config/goose/config.yaml`) | ✅ Provider: `ollama`, Model: `qwen2.5:7b` |
+| Goose connects to RTX Ollama | ✅ |
 | Schedules registered | ✅ `dispatch-issues` (*/15min), `nightly-report` (06:30) |
 | GitHub labels created | ✅ All 9 labels in `namlogan/agentic-platform` |
-| Toy test issue created | ✅ Issue #1 labeled `agent:ready` |
-| **End-to-end dispatch test** | ⏳ Blocked on `qwen2.5:7b` download |
+| **End-to-end dispatch test** | ✅ Issue #1 → PR #2 opened autonomously |
 
-**Acceptance pending:** Hand-labeled `agent:ready` issue → PR opens autonomously.
+**Executor:** aider + qwen2.5-coder:14b on RTX 5090 (auggie Enterprise non-interactive mode disabled by company admin; local executor is the permanent choice).
+
+**Acceptance:** Hand-labeled `agent:ready` issue → PR opened autonomously ✅ PR #2 merged 2026-06-13.
 
 ---
 
-### 🔄 M3 — Verification & CI (IN PROGRESS)
+### ✅ M3 — Verification & CI (COMPLETE)
 
 | Check | Status |
 |-------|--------|
-| `verify.sh` updated for Ollama endpoint | ✅ |
-| Self-hosted runner download on RTX | 🔄 In progress |
-| Branch protection on `main` | ⏳ After runner registered |
-| CI workflow `.github/workflows/ci.yml` | ✅ |
+| `verify.sh` — Docker sandbox + LLM review | ✅ `passed:true, gaps:[]` on PR #2 |
+| Self-hosted runner `milai-rtx5090` | ✅ Online |
+| Branch protection on `main` | ✅ Requires `test` CI + 1 review |
+| CI workflow `.github/workflows/ci.yml` | ✅ `test: pass` on PR #2 |
 
 ---
 
 ### ⏳ M4 — Scheduling & Ops (PENDING)
-Waiting for M3.
+Waiting for M3 → **M3 complete, M4 is next.**
 
 ---
 
@@ -87,13 +86,6 @@ Waiting for M3.
 Waiting for M4.
 
 ---
-
-## Active Background Tasks
-
-| Task | Status | ETA |
-|------|--------|-----|
-| `qwen2.5:7b` download on RTX | 🔄 47% (2.2/4.7 GB) | ~30 min |
-| GitHub Actions runner download on RTX | 🔄 In progress | ~10 min |
 
 ---
 
