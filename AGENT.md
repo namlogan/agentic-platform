@@ -2,7 +2,7 @@
 
 ## Commands
 
-test: bash scripts/ci-test.sh
+test: pip3 install fastapi httpx pytest --quiet && pytest test_hello_app.py -v
 lint: bash -c 'shellcheck scripts/*.sh 2>/dev/null || echo "shellcheck not installed, skipping"'
 
 ## Scope conventions
