@@ -8,7 +8,10 @@
 
 set -euo pipefail
 
-EXECUTOR="auggie"
+# Ensure Homebrew bin and Python user bin are in PATH (not present in non-interactive SSH sessions)
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.local/bin:$HOME/Library/Python/3.9/bin:$PATH"
+
+EXECUTOR="local"
 for arg in "$@"; do
   case $arg in
     --executor=*) EXECUTOR="${arg#*=}"; shift ;;
@@ -27,6 +30,18 @@ die()  { log "FATAL: $*"; exit 2; }
 MAX_ATTEMPTS=2
 TIMEOUT=1800  # 30 min per attempt
 
+# Cross-platform timeout wrapper
+run_timeout() {
+  local secs="$1"; shift
+  if command -v gtimeout &>/dev/null; then
+    gtimeout "$secs" "$@"
+  elif command -v timeout &>/dev/null; then
+    timeout "$secs" "$@"
+  else
+    "$@"  # no timeout available — run directly
+  fi
+}
+
 run_attempt() {
   local attempt="$1"
   local result_log="$WORKTREE/.agent-result-${attempt}.log"
@@ -35,18 +50,26 @@ run_attempt() {
   case "$EXECUTOR" in
 
     auggie)
-      (cd "$WORKTREE" && timeout "$TIMEOUT" auggie --print --quiet "$(cat "$TASKFILE")") \
+      (cd "$WORKTREE" && run_timeout "$TIMEOUT" auggie --print --quiet "$(cat "$TASKFILE")") \
         > "$result_log" 2>&1
       ;;
 
     claude-code)
-      (cd "$WORKTREE" && timeout "$TIMEOUT" claude -p "$(cat "$TASKFILE")") \
+      (cd "$WORKTREE" && run_timeout "$TIMEOUT" claude -p "$(cat "$TASKFILE")") \
         > "$result_log" 2>&1
       ;;
 
     local)
-      # Goose subagent on local vLLM — reads GOOSE_PROVIDER from env.
-      (cd "$WORKTREE" && timeout "$TIMEOUT" goose run --no-session --instructions "$(cat "$TASKFILE")") \
+      # Aider — coding agent with Ollama backend on RTX.
+      # Uses qwen2.5-coder:14b; aider handles file edits and git commits natively.
+      (cd "$WORKTREE" && run_timeout "$TIMEOUT" \
+        env OLLAMA_API_BASE="http://100.107.129.18:11434" \
+        aider \
+          --model ollama/qwen2.5-coder:14b \
+          --yes \
+          --no-check-update \
+          --no-show-model-warnings \
+          --message "$(cat "$TASKFILE")") \
         > "$result_log" 2>&1
       ;;
 
@@ -66,7 +89,7 @@ for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
 
   if [[ -f "$actual_log" ]]; then
     # Extract last paragraph as summary (executor prints summary at end per task template).
-    SUMMARY=$(tail -20 "$actual_log" | awk '/^$/{p=""} /^./{p=p" "$0} END{print p}' | xargs)
+    SUMMARY=$(tail -20 "$actual_log" | awk '/^$/{p=""} /^./{p=p" "$0} END{print p}' | tr -s ' ' | sed 's/^ //;s/ $//')
     [[ -z "$SUMMARY" ]] && SUMMARY=$(tail -3 "$actual_log" | tr '\n' ' ')
   fi
 

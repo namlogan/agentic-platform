@@ -15,6 +15,14 @@ LINT_CMD=$(grep -i "^lint:" "$AGENT_MD" | head -1 | sed 's/^[Ll]int:[[:space:]]*
 
 if [[ -n "$TEST_CMD" ]]; then
   echo "=== Running tests: $TEST_CMD ===" >&2
+  # If the test command uses pip, run inside a throwaway venv to avoid PEP 668 restrictions
+  # on externally-managed Python environments (Python 3.12+ on Linux runners).
+  if echo "$TEST_CMD" | grep -q 'pip'; then
+    VENV_DIR=$(mktemp -d /tmp/ci-venv-XXXX)
+    python3 -m venv "$VENV_DIR"
+    export PATH="$VENV_DIR/bin:$PATH"
+    trap 'rm -rf "$VENV_DIR"' EXIT
+  fi
   eval "$TEST_CMD"
 fi
 
