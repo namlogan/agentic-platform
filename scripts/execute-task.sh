@@ -19,7 +19,7 @@ for arg in "$@"; do
 done
 
 WORKTREE="${1:?worktree path required}"
-TASKFILE="${2:?task file path required}"
+TASKFILE="${2:-$WORKTREE/task.md}"
 
 log()  { echo "[execute-task/${EXECUTOR}] $*" >&2; }
 die()  { log "FATAL: $*"; exit 2; }

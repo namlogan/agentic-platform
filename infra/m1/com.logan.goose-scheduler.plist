@@ -16,16 +16,21 @@
     <string>REPOS=namlogan/agentic-platform</string>
     <string>--params</string>
     <string>BASE_DIR=/Users/namto/agent-work</string>
+    <string>--with-extension</string>
+    <string>/opt/homebrew/bin/auggie --mcp</string>
   </array>
   <key>WorkingDirectory</key><string>/Users/namto/Desktop/agentic-platform</string>
   <key>EnvironmentVariables</key>
   <dict>
     <key>GOOSE_PROVIDER</key><string>ollama</string>
-    <key>GOOSE_MODEL</key><string>qwen2.5:7b</string>
+    <key>GOOSE_MODEL</key><string>qwen2.5-coder:14b</string>
+    <key>GOOSE_TOOLSHIM</key><string>true</string>
+    <key>GOOSE_TOOLSHIM_OLLAMA_MODEL</key><string>qwen2.5:7b</string>
     <key>OLLAMA_HOST</key><string>http://milai:11434</string>
     <key>VLLM_BASE</key><string>http://milai:11434/v1</string>
     <key>VLLM_MODEL</key><string>qwen2.5-coder:14b</string>
     <key>PLATFORM_REPO</key><string>namlogan/agentic-platform</string>
+    <key>PLATFORM_DIR</key><string>/Users/namto/Desktop/agentic-platform</string>
     <key>PATH</key><string>/Users/namto/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>HOME</key><string>/Users/namto</string>
   </dict>

@@ -86,8 +86,12 @@ git fetch origin
 
 # Create worktree on a fresh branch from the default branch.
 DEFAULT=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|refs/remotes/origin/||')
-if git worktree list | grep -q "$WORKTREE"; then
+git worktree prune  # clean up stale entries first
+if [[ -d "$WORKTREE" ]]; then
   log "Worktree $WORKTREE already exists, reusing."
+elif git branch --list "$BRANCH" | grep -q "$BRANCH"; then
+  # branch exists (from a prior interrupted run) but directory is gone — reuse branch
+  git worktree add "$WORKTREE" "$BRANCH"
 else
   git worktree add -b "$BRANCH" "$WORKTREE" "origin/$DEFAULT"
 fi

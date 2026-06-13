@@ -7,16 +7,21 @@ instructions: |
 
   REPOS env var lists space-separated repos to manage (e.g. "namlogan/myproject").
   BASE_DIR defaults to ~/agent-work.
+  PLATFORM_DIR is the absolute path to the agentic-platform repo (contains scripts/).
 
-  1. Run `scripts/dispatch.sh $REPO $BASE_DIR` for each REPO in $REPOS (stop at first
-     successful claim). If none claimed, exit quietly.
+  0. Start by running this shell command FIRST (required before any other step):
+     `export PLATFORM_DIR=/Users/namto/Desktop/agentic-platform`
+     All subsequent script calls must use the $PLATFORM_DIR prefix.
+
+  1. Run `bash $PLATFORM_DIR/scripts/dispatch.sh $REPO $BASE_DIR` for each REPO in $REPOS
+     (stop at first successful claim). If none claimed, exit quietly.
   2. Parse the JSON output to get issue, worktree, branch.
-  3. Run `scripts/render-task.sh $REPO $ISSUE_NUM $WORKTREE` → save to $WORKTREE/task.md
-  4. Run `scripts/execute-task.sh $WORKTREE $WORKTREE/task.md`
+  3. Run `bash $PLATFORM_DIR/scripts/render-task.sh $REPO $ISSUE_NUM $WORKTREE` → save to $WORKTREE/task.md
+  4. Run `bash $PLATFORM_DIR/scripts/execute-task.sh $WORKTREE $WORKTREE/task.md`
      Parse result JSON. If status == "done", continue. If "failed"/"blocked", jump to step 8.
-  5. Run `scripts/verify.sh $REPO $ISSUE_NUM $WORKTREE`
+  5. Run `bash $PLATFORM_DIR/scripts/verify.sh $REPO $ISSUE_NUM $WORKTREE`
      Parse result JSON. If not passed AND gaps exist, do one corrective executor run:
-       `scripts/execute-task.sh $WORKTREE $WORKTREE/task.md`
+       `bash $PLATFORM_DIR/scripts/execute-task.sh $WORKTREE $WORKTREE/task.md`
      Then verify once more. If still failing, treat as "blocked".
   6. On success:
      a. `cd $WORKTREE && git push -u origin $BRANCH`
@@ -39,8 +44,13 @@ parameters:
     requirement: optional
     description: Base directory for agent worktrees
     default: ~/agent-work
+  - key: PLATFORM_DIR
+    input_type: string
+    requirement: optional
+    description: Absolute path to the agentic-platform repo (contains scripts/)
+    default: /Users/namto/Desktop/agentic-platform
 
-prompt: "Begin the dispatch pipeline. REPOS={{ REPOS }} BASE_DIR={{ BASE_DIR }}"
+prompt: "Begin the dispatch pipeline. REPOS={{ REPOS }} BASE_DIR={{ BASE_DIR }} PLATFORM_DIR={{ PLATFORM_DIR }}"
 
 extensions:
   - type: builtin
