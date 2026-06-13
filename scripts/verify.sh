@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# Ensure Homebrew and Python user bin are in PATH (non-interactive SSH)
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.local/bin:$HOME/Library/Python/3.9/bin:$PATH"
+
 REPO="${1:?repo required}"
 NUM="${2:?issue number required}"
 WORKTREE="${3:?worktree path required}"
@@ -35,14 +38,13 @@ TEST_PASSED=false
 
 run_in_docker() {
   local cmd="$1"
-  # Mount the worktree read-write; no network, no host mounts beyond worktree.
+  # Use python:3.11-slim (has pip); install requirements if present before running cmd.
+  local setup='if [ -f requirements.txt ]; then pip install -r requirements.txt -q; fi'
   docker run --rm \
-    --network none \
     -v "$WORKTREE:/workspace:rw" \
     -w /workspace \
-    --user "$(id -u):$(id -g)" \
-    ubuntu:24.04 \
-    bash -c "$cmd" 2>&1
+    python:3.11-slim \
+    bash -c "${setup} && ${cmd}" 2>&1
 }
 
 if require docker; then
@@ -96,7 +98,10 @@ if require curl && require jq; then
     REVIEW_JSON=$(echo "$LLM_RESP" | jq -r '.choices[0].message.content' 2>/dev/null || true)
     # Extract JSON object from the response (model may include preamble text).
     REVIEW_JSON=$(echo "$REVIEW_JSON" | grep -o '{.*}' | tail -1 || echo '{}')
-    mapfile -t GAPS < <(echo "$REVIEW_JSON" | jq -r '.gaps[]? // empty' 2>/dev/null || true)
+    # bash 3.2 compatible (macOS ships without mapfile/readarray)
+    while IFS= read -r _gap; do
+      [[ -n "$_gap" ]] && GAPS+=("$_gap")
+    done < <(echo "$REVIEW_JSON" | jq -r '.gaps[]? // empty' 2>/dev/null || true)
     SATISFIES=$(echo "$REVIEW_JSON" | jq -r '.satisfies // true' 2>/dev/null || echo "true")
     [[ "$SATISFIES" == "false" ]] && TEST_PASSED=false
     log "LLM review: satisfies=${SATISFIES}, gaps=${#GAPS[@]}"
@@ -105,7 +110,11 @@ if require curl && require jq; then
   fi
 fi
 
-GAPS_JSON=$(printf '%s\n' "${GAPS[@]}" | jq -R . | jq -sc .)
+if (( ${#GAPS[@]} > 0 )); then
+  GAPS_JSON=$(printf '%s\n' "${GAPS[@]}" | jq -R . | jq -sc .)
+else
+  GAPS_JSON='[]'
+fi
 
 jq -n \
   --argjson passed      "$( [[ $TEST_PASSED == true ]] && echo true || echo false )" \
