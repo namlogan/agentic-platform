@@ -29,12 +29,34 @@ instructions: |
      b. Post the last 50 lines of the result log as a comment on the issue.
      c. Exit.
 
+parameters:
+  - key: REPOS
+    input_type: string
+    requirement: required
+    description: Space-separated list of repos to manage (e.g. "owner/repo")
+  - key: BASE_DIR
+    input_type: string
+    requirement: optional
+    description: Base directory for agent worktrees
+    default: ~/agent-work
+
+prompt: "Begin the dispatch pipeline. REPOS={{ REPOS }} BASE_DIR={{ BASE_DIR }}"
+
 extensions:
   - type: builtin
     name: developer
+  - type: stdio
+    name: augment-context
+    cmd: /opt/homebrew/bin/auggie
+    args:
+      - --mcp
+    enabled: true
+    timeout: 600
 
 settings:
   goose_provider: ollama
   goose_model: qwen2.5-coder:14b
+  goose_toolshim: true
+  goose_toolshim_ollama_model: qwen2.5:7b
 
 schedule: "*/15 * * * *"

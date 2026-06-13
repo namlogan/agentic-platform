@@ -1,0 +1,34 @@
+# Cách làm việc của agent trong dự án này
+
+## Phân vai công cụ
+- Bạn (Goose, chạy bằng Qwen 2.5 Coder local) là người THỰC THI. Mặc định tự
+  đọc file, sửa code, chạy lệnh, chạy test bằng năng lực của chính mình. Việc này
+  miễn phí và không giới hạn — cứ làm thoải mái.
+- Công cụ `codebase-retrieval` (từ auggie) TỐN QUOTA enterprise. Chỉ gọi khi thật
+  sự cần và chưa có cách rẻ hơn.
+
+## KHI NÀO gọi codebase-retrieval (auggie)
+Gọi khi:
+- Cần định vị thứ gì đó trong codebase lớn mà bạn chưa biết nằm ở đâu
+  ("logic xác thực nằm file nào", "ai gọi hàm này").
+- Cần hiểu quan hệ giữa nhiều module / luồng dữ liệu xuyên file trước khi sửa.
+- Trước một thay đổi có rủi ro lan rộng, cần biết những nơi nào bị ảnh hưởng.
+- Bạn đã thử tự tìm bằng grep/đọc file mà vẫn không chắc chắn.
+
+## KHI NÀO KHÔNG gọi (tự xử bằng Qwen)
+- File hoặc vị trí đã biết rõ → đọc thẳng, đừng hỏi auggie.
+- Tìm chuỗi/ký hiệu đơn giản → dùng grep/ripgrep, rẻ hơn nhiều.
+- Sửa trong phạm vi một file đang mở → làm trực tiếp.
+- Câu hỏi chung về ngôn ngữ/framework không liên quan codebase cụ thể → tự trả lời.
+
+## Quy tắc tiết kiệm
+- Gộp nhu cầu: nếu cần hỏi auggie, gom thành một truy vấn rõ ràng thay vì hỏi
+  lắt nhắt nhiều lần.
+- Sau khi auggie trả context, GHI NHỚ trong phiên — đừng hỏi lại cùng một thứ.
+- Mỗi lần định gọi auggie, tự hỏi: "grep hay đọc file có giải quyết được không?"
+  Nếu có, dùng cách đó trước.
+
+## Task lớn nhiều bước
+Với task kiến trúc/refactor nhiều bước: bám theo plan/checklist đã được cung cấp,
+làm TỪNG bước một, chạy test sau mỗi bước. Nếu chưa có checklist rõ ràng, dừng lại
+và yêu cầu plan trước khi sửa hàng loạt.
