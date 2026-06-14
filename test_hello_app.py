@@ -12,3 +12,8 @@ def test_health():
     response = client.get('/health')
     assert response.status_code == 200
     assert response.json() == {'status': 'ok'}
+
+def test_goodbye():
+    response = client.get('/goodbye')
+    assert response.status_code == 200
+    assert response.json() == {'message': 'Goodbye from agentic-platform'}
