@@ -21,6 +21,28 @@ See [docs/DESIGN.md](docs/DESIGN.md) for the full architecture and rationale.
 - **Kill switch:** remove `agent:ready` labels, or `launchctl unload ~/Library/LaunchAgents/com.logan.goose-scheduler.plist`.
 - **Upgrades:** pin goose + vLLM versions in `infra/`; bump monthly via a dedicated issue.
 
+### Alerting (so failures are never silent)
+
+Principle: **healthy = an active heartbeat**; silence is treated as failure (this is
+what was missing when the pipeline 404'd silently for ~1.5 days). Three layers:
+
+1. **Heartbeat on success** — every scheduled job runs via `scripts/run-job.sh`, which
+   writes `~/.config/agentic/state/heartbeat-<job>` on exit 0 and alerts after
+   `FAIL_THRESHOLD` (default 2) consecutive failures, with the log tail attached.
+2. **Watchdog** (`scripts/healthcheck.sh`, `com.logan.goose-watchdog` every 15 min) —
+   independent of Goose/Ollama; checks Ollama reachable + model present, heartbeat
+   freshness, stuck `agent:wip` (>90 min), and `agent:blocked` issues.
+3. **Dead-man switch on RTX** (`infra/rtx/deadman.sh`, cron every 15 min) — M1 pushes its
+   heartbeat to the always-on RTX; if it goes stale (>60 min) the RTX alerts. Catches the
+   one case the on-box watchdog can't report: the whole Mac Mini being down.
+
+All alerts go to **Telegram**. To enable: copy `infra/m1/alert.env.example` →
+`~/.config/agentic/alert.env` on M1 **and** `~/.agentic/alert.env` on RTX, filling in
+`TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (see the example file for the 30-second
+@BotFather steps). Until then, alerts are logged to
+`~/.config/agentic/state/alerts.log` and the system keeps running.
+Test anytime: `bash scripts/notify-telegram.sh test "hello from agentic-platform"`.
+
 ### Labels (state machine)
 
 | Label | Set by | Meaning |

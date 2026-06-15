@@ -1,0 +1,4 @@
+
+# alert secrets / local state
+.config/agentic/
+alert.env
