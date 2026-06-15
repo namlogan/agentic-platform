@@ -1,0 +1,10 @@
+# aider config for the agentic-platform executor (qwen3-coder on RTX Ollama).
+# Headless/non-interactive use: aider writes code + commits, no prompts.
+model: ollama_chat/qwen3-coder-wms:latest
+auto-commits: true
+yes-always: true
+stream: false
+check-update: false
+show-model-warnings: false
+gitignore: false
+analytics-disable: true

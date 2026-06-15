@@ -63,12 +63,13 @@ fi
 
 # ── claim: swap labels agent:ready → agent:wip ───────────────────────────────
 
+# Side-effect calls must not pollute stdout (it carries the JSON result).
 gh issue edit "$NUM" --repo "$REPO" \
   --remove-label "agent:ready" \
-  --add-label "agent:wip"
+  --add-label "agent:wip" >/dev/null
 
 gh issue comment "$NUM" --repo "$REPO" \
-  --body "🤖 **Orchestrator claimed** this issue on \`$(hostname)\` at $(date -u +%Y-%m-%dT%H:%M:%SZ). Branch: \`${BRANCH}\`."
+  --body "🤖 **Orchestrator claimed** this issue on \`$(hostname)\` at $(date -u +%Y-%m-%dT%H:%M:%SZ). Branch: \`${BRANCH}\`." >/dev/null
 
 # ── set up worktree ───────────────────────────────────────────────────────────
 
@@ -91,9 +92,9 @@ if [[ -d "$WORKTREE" ]]; then
   log "Worktree $WORKTREE already exists, reusing."
 elif git branch --list "$BRANCH" | grep -q "$BRANCH"; then
   # branch exists (from a prior interrupted run) but directory is gone — reuse branch
-  git worktree add "$WORKTREE" "$BRANCH"
+  git worktree add "$WORKTREE" "$BRANCH" >&2
 else
-  git worktree add -b "$BRANCH" "$WORKTREE" "origin/$DEFAULT"
+  git worktree add -b "$BRANCH" "$WORKTREE" "origin/$DEFAULT" >&2
 fi
 
 log "Worktree ready: $WORKTREE  branch: $BRANCH"

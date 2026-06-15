@@ -9,19 +9,10 @@
     <string>/Users/namto/agentic-platform/scripts/run-job.sh</string>
     <string>dispatch</string>
     <string>--</string>
-    <string>/Users/namto/.local/bin/goose</string>
-    <string>run</string>
-    <string>--recipe</string>
-    <string>/Users/namto/agentic-platform/recipes/dispatch-issues.yaml</string>
-    <string>--no-session</string>
-    <string>--max-turns</string>
-    <string>30</string>
-    <string>--params</string>
-    <string>REPOS=namlogan/agentic-platform</string>
-    <string>--params</string>
-    <string>BASE_DIR=/Users/namto/agent-work</string>
-    <string>--with-extension</string>
-    <string>/opt/homebrew/bin/auggie --mcp</string>
+    <string>/bin/bash</string>
+    <string>/Users/namto/agentic-platform/scripts/run-pipeline.sh</string>
+    <string>namlogan/agentic-platform namlogan/warehouse-agentic</string>
+    <string>/Users/namto/agent-work</string>
   </array>
   <key>WorkingDirectory</key><string>/Users/namto/agentic-platform</string>
   <key>EnvironmentVariables</key>
@@ -31,6 +22,7 @@
     <key>GOOSE_TOOLSHIM</key><string>true</string>
     <key>GOOSE_TOOLSHIM_OLLAMA_MODEL</key><string>qwen3-coder:30b-a3b-q4_K_M</string>
     <key>OLLAMA_HOST</key><string>http://milai:11434</string>
+    <key>OLLAMA_API_BASE</key><string>http://milai:11434</string>
     <key>VLLM_BASE</key><string>http://milai:11434/v1</string>
     <key>VLLM_MODEL</key><string>qwen3-coder:30b-a3b-q4_K_M</string>
     <key>PLATFORM_REPO</key><string>namlogan/agentic-platform</string>
