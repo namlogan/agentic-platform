@@ -100,39 +100,87 @@ fi
 TEST_CMD="${FORCE_TEST_CMD:-$TEST_CMD}"
 log "test command: $TEST_CMD"
 
-# ── 3. implement + test, with one corrective retry ───────────────────────────
-# Directive matters for a small local model in aider's one-shot --message mode:
-# without it, qwen3-coder tends to reply "let me look at the files first" and the
-# single turn ends with no edits. Force it to emit the files now.
-AIDER_DIRECTIVE="IMPORTANT — you are running non-interactively in a single shot.
-Implement ALL required changes RIGHT NOW by creating and editing the necessary
-files directly. Do NOT ask to see files, do NOT ask for confirmation, do NOT
-describe a plan first — output the full contents of every file you create or
-change in THIS response. Create any new files the task needs.
-"
-PROMPT="${AIDER_DIRECTIVE}
+# ── 3. implement + verify — Option C: scaffold + tiered qwen→claude escalation ─
+: > "$WORKTREE/.pipeline.log"
+
+# Keep the driver's scratch files out of git so the claude tier's `git add -A`
+# only ever commits real code.
+EXCL=$(git -C "$WORKTREE" rev-parse --git-path info/exclude 2>/dev/null)
+if [ -n "$EXCL" ]; then mkdir -p "$(dirname "$EXCL")"; printf '%s\n' task.md '.pipeline.log' '.exec-*.log' '.test-*.log' '.aider*' '.agent-result*' >> "$EXCL"; fi
+
+# Conservative scaffold: pre-create clearly-located source files the task names
+# (dir + known extension; excluding infra/docs/config). qwen3-coder edits
+# EXISTING files reliably but fails at greenfield multi-file creation, so giving
+# it real (empty) files to fill raises its success rate.
+SCAFFOLDED=""
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  case "$f" in docker-compose.yml|AGENT.md|.github/*|infra/*|docs/*|*node_modules*) continue ;; esac
+  # Only scaffold under an existing top-level dir, so ambiguous spec paths
+  # (e.g. "domain/app/main.py" when the real tree is services/domain/) don't
+  # get created in the wrong place.
+  [ -d "$WORKTREE/${f%%/*}" ] || continue
+  if [ ! -e "$WORKTREE/$f" ]; then
+    mkdir -p "$WORKTREE/$(dirname "$f")" 2>/dev/null && : > "$WORKTREE/$f" && SCAFFOLDED="$SCAFFOLDED $f"
+  fi
+done <<EOF
+$(grep -oE '[A-Za-z0-9_]+(/[A-Za-z0-9_.-]+)+\.(py|ts|tsx|js|jsx|yml|yaml|json|sql|toml|sh)' "$WORKTREE/task.md" 2>/dev/null | sort -u | head -20)
+EOF
+[ -n "$SCAFFOLDED" ] && log "scaffolded:$SCAFFOLDED"
+EXISTING_FILES="$EXISTING_FILES $SCAFFOLDED"
+
+DIRECTIVE="IMPORTANT — non-interactive single shot. Implement ALL required changes NOW
+by creating/editing files directly. Do NOT ask to see files or for confirmation, do
+NOT just describe a plan — write the full file contents in THIS response."
+
+commit_if_dirty() {  # claude-code doesn't auto-commit; aider does
+  if [ -n "$(git -C "$WORKTREE" status --porcelain 2>/dev/null)" ]; then
+    git -C "$WORKTREE" add -A 2>/dev/null
+    git -C "$WORKTREE" -c user.email=agent@local -c user.name='agentic-bot' \
+      commit -q --no-verify -m "agent: implement #$NUM ($1)" 2>/dev/null || true
+  fi
+}
+
+run_executor() {  # $1=tier $2=prompt $3=logfile
+  case "$1" in
+    qwen)   # shellcheck disable=SC2086
+      ( cd "$WORKTREE" && aider --message "$2" --yes $EXISTING_FILES ) > "$3" 2>&1 || true ;;
+    claude)
+      ( cd "$WORKTREE" && claude -p "$2" --dangerously-skip-permissions ) > "$3" 2>&1 || true
+      commit_if_dirty "claude" ;;
+  esac
+}
+
+# Attempt sequence: qwen (free) twice, then escalate to claude (cost) once.
+TIERS="qwen qwen claude"
+PROMPT="$DIRECTIVE
 
 $(cat "$WORKTREE/task.md")"
-: > "$WORKTREE/.pipeline.log"
-STATUS="failed"
-for a in $(seq 1 "$MAX_ATTEMPTS"); do
-  log "attempt $a/$MAX_ATTEMPTS — aider implementing"
-  # shellcheck disable=SC2086
-  ( cd "$WORKTREE" && aider --message "$PROMPT" --yes $EXISTING_FILES ) \
-    > "$WORKTREE/.aider-$a.log" 2>&1 || true
-  cat "$WORKTREE/.aider-$a.log" >> "$WORKTREE/.pipeline.log"
+STATUS="failed"; a=0
+for tier in $TIERS; do
+  a=$((a + 1))
+  if [ "$tier" = "claude" ]; then
+    log "attempt $a — ESCALATING to claude -p (qwen3 exhausted)"
+    notify "issue-escalate-$NUM" "⤴️ #$NUM '$TITLE': qwen3 stuck, escalating to claude -p"
+  else
+    log "attempt $a ($tier) — implementing"
+  fi
+  run_executor "$tier" "$PROMPT" "$WORKTREE/.exec-$a.log"
+  cat "$WORKTREE/.exec-$a.log" >> "$WORKTREE/.pipeline.log"
 
   log "attempt $a — running tests"
-  if ( cd "$WORKTREE" && eval "$TEST_CMD" ) > "$WORKTREE/.test-$a.log" 2>&1; then
-    cat "$WORKTREE/.test-$a.log" >> "$WORKTREE/.pipeline.log"
-    STATUS="done"; log "attempt $a — tests PASSED"; break
-  fi
+  ( cd "$WORKTREE" && eval "$TEST_CMD" ) > "$WORKTREE/.test-$a.log" 2>&1
+  trc=$?
   cat "$WORKTREE/.test-$a.log" >> "$WORKTREE/.pipeline.log"
-  log "attempt $a — tests FAILED"
-  PROMPT="The previous attempt did not pass the tests. Fix the code so ALL tests pass.
+  nc=$(git -C "$WORKTREE" rev-list --count "origin/$(default_branch)..HEAD" 2>/dev/null || echo 0)
+  if [ "$trc" -eq 0 ] && [ "$nc" -gt 0 ]; then
+    STATUS="done"; log "attempt $a — tests PASSED + $nc commit(s)"; break
+  fi
+  log "attempt $a — not done (tests rc=$trc, commits=$nc)"
+  PROMPT="The previous attempt did not produce a passing, committed change. Implement it fully now.
 
 === Test output ===
-$(tail -40 "$WORKTREE/.test-$a.log")
+$(tail -40 "$WORKTREE/.test-$a.log" 2>/dev/null)
 
 === Original task ===
 $(cat "$WORKTREE/task.md")"
