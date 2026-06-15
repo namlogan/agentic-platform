@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.logan.goose-watchdog</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/namto/agentic-platform/scripts/healthcheck.sh</string>
+  </array>
+  <key>StartInterval</key><integer>900</integer>
+  <key>RunAtLoad</key><true/>
+  <key>WorkingDirectory</key><string>/Users/namto/agentic-platform</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/Users/namto/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>HOME</key><string>/Users/namto</string>
+    <key>OLLAMA_HOST</key><string>http://milai:11434</string>
+    <key>GOOSE_MODEL</key><string>qwen3-coder:30b-a3b-q4_K_M</string>
+    <key>PLATFORM_REPO</key><string>namlogan/agentic-platform</string>
+  </dict>
+  <key>StandardOutPath</key><string>/Users/namto/Library/Logs/goose-watchdog.log</string>
+  <key>StandardErrorPath</key><string>/Users/namto/Library/Logs/goose-watchdog.err</string>
+</dict>
+</plist>

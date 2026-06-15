@@ -5,6 +5,10 @@
   <key>Label</key><string>com.logan.goose-scheduler</string>
   <key>ProgramArguments</key>
   <array>
+    <string>/bin/bash</string>
+    <string>/Users/namto/agentic-platform/scripts/run-job.sh</string>
+    <string>dispatch</string>
+    <string>--</string>
     <string>/Users/namto/.local/bin/goose</string>
     <string>run</string>
     <string>--recipe</string>
