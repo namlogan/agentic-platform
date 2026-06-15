@@ -43,6 +43,21 @@ All alerts go to **Telegram**. To enable: copy `infra/m1/alert.env.example` →
 `~/.config/agentic/state/alerts.log` and the system keeps running.
 Test anytime: `bash scripts/notify-telegram.sh test "hello from agentic-platform"`.
 
+### Remote control (Telegram, two-way)
+
+`scripts/telegram-control.sh` (LaunchAgent `com.logan.telegram-control`, KeepAlive)
+long-polls Telegram and acts **only** on messages from the authorized `TELEGRAM_CHAT_ID`.
+Drive the pipeline from your phone:
+
+- `/status` — queue counts, last dispatch heartbeat, ollama + scheduler state
+- `/dispatch` — run a dispatch pass now
+- `/retry N` — move issue #N back to `agent:ready`
+- `/pause` / `/resume` — kill switch (unload/load the scheduler)
+- `/help`
+- any free-text message → creates an `agent:ready` GitHub issue from it
+
+Test a single command without the daemon: `scripts/telegram-control.sh --handle "/status"`.
+
 ### Labels (state machine)
 
 | Label | Set by | Meaning |
