@@ -4,7 +4,7 @@ app = FastAPI()
 
 @app.get('/hello')
 def hello():
-    return {'message': 'Ok'}
+    return {'message': 'Hello from agentic-platform'}
 
 @app.get('/health')
 def health():
