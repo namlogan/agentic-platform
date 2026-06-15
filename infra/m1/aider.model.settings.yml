@@ -1,0 +1,10 @@
+# Model settings for the local qwen3-coder executor.
+# - edit_format: whole → rewrite whole files. Slower but far more reliable than
+#   search/replace diffs for a 30B local model (fewer "failed to apply edit").
+# - num_ctx 32768 → MUST match the model's tuned context; without this aider/litellm
+#   defaults ollama to ~2k and truncates the repo, producing broken edits.
+- name: ollama_chat/qwen3-coder-wms:latest
+  edit_format: whole
+  use_repo_map: true
+  extra_params:
+    num_ctx: 32768
