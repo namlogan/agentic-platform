@@ -90,6 +90,13 @@ ollama: ${ol} · scheduler: ${sched}"
       send "Lệnh không rõ. /help để xem danh sách."
       ;;
     *)
+      # Guard: ignore trivially short / acknowledgement messages so casual chat
+      # ("ok", "thanks") doesn't get turned into issues.
+      local clean; clean="$(printf '%s' "$text" | tr -d '[:space:]')"
+      if [ "${#clean}" -lt 12 ]; then
+        send "ℹ️ Tin hơi ngắn nên mình không tạo issue. Mô tả task cụ thể hơn (≥12 ký tự), hoặc /help để xem lệnh."
+        return
+      fi
       local title out url
       title="$(printf '%s' "$text" | head -1 | cut -c1-70)"
       out=$(gh issue create --repo "$PLATFORM_REPO" --label agent:ready \
