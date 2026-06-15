@@ -66,13 +66,24 @@ bash "$HERE/render-task.sh" "$REPO" "$NUM" "$WORKTREE" > "$WORKTREE/task.md"
 # Files in scope (from the issue's "File scope" bullets) — passed to aider so a
 # small model edits the right files instead of guessing via repo map.
 SCOPE_FILES=$(awk '
-  tolower($0) ~ /file scope/ {f=1; next}
-  f && /^[[:space:]]*[-*]/ {gsub(/^[[:space:]]*[-*][[:space:]]*/,""); gsub(/`/,""); print; next}
-  f && /^#/ {f=0}
+  tolower($0) ~ /file scope/ {inscope=1; cap=1; next}
+  inscope && tolower($0) ~ /not allowed/ {cap=0; next}
+  inscope && tolower($0) ~ /allowed/ {cap=1; next}
+  inscope && cap && /^[[:space:]]*[-*]/ {gsub(/^[[:space:]]*[-*][[:space:]]*/,""); gsub(/`/,""); print; next}
+  inscope && /^#/ {inscope=0}
 ' "$WORKTREE/task.md" | tr -d ' ')
 EXISTING_FILES=""
 for fpath in $SCOPE_FILES; do
-  [ -e "$WORKTREE/$fpath" ] && EXISTING_FILES="$EXISTING_FILES $fpath" || EXISTING_FILES="$EXISTING_FILES $fpath"
+  # Only pass concrete file paths to aider. Skip globs (services/domain/**),
+  # label lines (Allowed:), and anything without a filename.extension — otherwise
+  # aider tries to "add" junk paths. If nothing concrete remains, aider works from
+  # the task description + repo map (fine for greenfield file creation).
+  case "$fpath" in
+    *"*"* | *:* | "") continue ;;
+  esac
+  if [ -e "$WORKTREE/$fpath" ] || printf '%s' "$fpath" | grep -q '/.*\.[A-Za-z0-9]\+$\|^[^/]*\.[A-Za-z0-9]\+$'; then
+    EXISTING_FILES="$EXISTING_FILES $fpath"
+  fi
 done
 log "scope files: ${EXISTING_FILES:-<none, aider will use repo map>}"
 
@@ -90,7 +101,18 @@ TEST_CMD="${FORCE_TEST_CMD:-$TEST_CMD}"
 log "test command: $TEST_CMD"
 
 # ── 3. implement + test, with one corrective retry ───────────────────────────
-PROMPT="$(cat "$WORKTREE/task.md")"
+# Directive matters for a small local model in aider's one-shot --message mode:
+# without it, qwen3-coder tends to reply "let me look at the files first" and the
+# single turn ends with no edits. Force it to emit the files now.
+AIDER_DIRECTIVE="IMPORTANT — you are running non-interactively in a single shot.
+Implement ALL required changes RIGHT NOW by creating and editing the necessary
+files directly. Do NOT ask to see files, do NOT ask for confirmation, do NOT
+describe a plan first — output the full contents of every file you create or
+change in THIS response. Create any new files the task needs.
+"
+PROMPT="${AIDER_DIRECTIVE}
+
+$(cat "$WORKTREE/task.md")"
 : > "$WORKTREE/.pipeline.log"
 STATUS="failed"
 for a in $(seq 1 "$MAX_ATTEMPTS"); do
