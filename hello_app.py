@@ -13,3 +13,7 @@ def health():
 @app.get('/ping')
 def ping():
     return {'ping': 'pong'}
+
+@app.get('/goodbye')
+def goodbye():
+    return {'message': 'Goodbye from agentic-platform'}
