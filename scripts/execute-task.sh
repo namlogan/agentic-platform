@@ -61,11 +61,11 @@ run_attempt() {
 
     local)
       # Aider — coding agent with Ollama backend on RTX.
-      # Uses qwen2.5-coder:14b; aider handles file edits and git commits natively.
+      # Uses qwen3-coder:30b-a3b-q4_K_M; aider handles file edits and git commits natively.
       (cd "$WORKTREE" && run_timeout "$TIMEOUT" \
         env OLLAMA_API_BASE="http://100.107.129.18:11434" \
         aider \
-          --model ollama/qwen2.5-coder:14b \
+          --model ollama/qwen3-coder:30b-a3b-q4_K_M \
           --yes \
           --no-check-update \
           --no-show-model-warnings \

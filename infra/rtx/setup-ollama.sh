@@ -32,11 +32,11 @@ echo "✓ OLLAMA_HOST=0.0.0.0 set"
 
 # Pull models
 echo "[3/5] Pulling models..."
-echo "  → qwen2.5:7b (orchestrator brain, ~4.7 GB)..."
-ollama pull qwen2.5:7b
+echo "  → qwen3-coder-wms:latest (orchestrator brain, ~4.7 GB)..."
+ollama pull qwen3-coder-wms:latest
 
-echo "  → qwen2.5-coder:14b (LLM code review in verify.sh, ~9 GB)..."
-ollama pull qwen2.5-coder:14b
+echo "  → qwen3-coder:30b-a3b-q4_K_M (LLM code review in verify.sh, ~9 GB)..."
+ollama pull qwen3-coder:30b-a3b-q4_K_M
 
 echo "[4/5] Verifying models..."
 ollama list
@@ -47,7 +47,7 @@ python3 -c "
 import json, urllib.request, time
 
 url = 'http://localhost:11434/api/generate'
-data = json.dumps({'model': 'qwen2.5:7b', 'prompt': 'Say hello', 'stream': False}).encode()
+data = json.dumps({'model': 'qwen3-coder-wms:latest', 'prompt': 'Say hello', 'stream': False}).encode()
 t0 = time.time()
 req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
 with urllib.request.urlopen(req) as r:

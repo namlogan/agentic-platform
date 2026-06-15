@@ -9,9 +9,10 @@ instructions: |
   BASE_DIR defaults to ~/agent-work.
   PLATFORM_DIR is the absolute path to the agentic-platform repo (contains scripts/).
 
-  0. Start by running this shell command FIRST (required before any other step):
-     `export PLATFORM_DIR=/Users/namto/Desktop/agentic-platform`
-     All subsequent script calls must use the $PLATFORM_DIR prefix.
+  0. PLATFORM_DIR is provided to you in the prompt below — export that exact value
+     FIRST (required before any other step), e.g. `export PLATFORM_DIR=<value from prompt>`.
+     Do NOT invent or hardcode a different path. All subsequent script calls must use
+     the $PLATFORM_DIR prefix.
 
   1. Run `bash $PLATFORM_DIR/scripts/dispatch.sh $REPO $BASE_DIR` for each REPO in $REPOS
      (stop at first successful claim). If none claimed, exit quietly.
@@ -25,8 +26,13 @@ instructions: |
      Then verify once more. If still failing, treat as "blocked".
   6. On success:
      a. `cd $WORKTREE && git push -u origin $BRANCH`
-     b. `gh pr create --repo $REPO --base main --head $BRANCH --title "agent: $TITLE (#$ISSUE)" --body "$(cat $WORKTREE/task.md)"`
-        Include test output summary in the PR body.
+     b. Build the PR body as a FILE first, never inline in the shell command (inline
+        markdown with backticks or braces gets mangled by the shell). Write the body —
+        a short summary plus the test output — to `$WORKTREE/pr-body.md` using a single
+        heredoc with a QUOTED delimiter so nothing is expanded, e.g.:
+          `cat > $WORKTREE/pr-body.md <<'EOF'` … markdown … `EOF`
+        Then create the PR with `--body-file`, NOT `--body`:
+          `gh pr create --repo $REPO --base main --head $BRANCH --title "agent: $TITLE (#$ISSUE)" --body-file $WORKTREE/pr-body.md`
      c. Label the PR and issue: `gh issue edit $ISSUE --repo $REPO --remove-label agent:wip --add-label agent:review`
   7. Exit successfully.
   8. On failure/blocked:
@@ -48,7 +54,7 @@ parameters:
     input_type: string
     requirement: optional
     description: Absolute path to the agentic-platform repo (contains scripts/)
-    default: /Users/namto/Desktop/agentic-platform
+    default: /Users/namto/agentic-platform
 
 prompt: "Begin the dispatch pipeline. REPOS={{ REPOS }} BASE_DIR={{ BASE_DIR }} PLATFORM_DIR={{ PLATFORM_DIR }}"
 
@@ -65,8 +71,8 @@ extensions:
 
 settings:
   goose_provider: ollama
-  goose_model: qwen2.5-coder:14b
+  goose_model: qwen3-coder:30b-a3b-q4_K_M
   goose_toolshim: true
-  goose_toolshim_ollama_model: qwen2.5:7b
+  goose_toolshim_ollama_model: qwen3-coder:30b-a3b-q4_K_M
 
 schedule: "*/15 * * * *"

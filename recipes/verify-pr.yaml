@@ -19,4 +19,4 @@ extensions:
 
 settings:
   goose_provider: ollama
-  goose_model: qwen2.5-coder:14b
+  goose_model: qwen3-coder:30b-a3b-q4_K_M
