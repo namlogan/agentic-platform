@@ -25,7 +25,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>GOOSE_PROVIDER</key><string>ollama</string>
-    <key>GOOSE_MODEL</key><string>qwen3-coder:30b-a3b-q4_K_M</string>
+    <key>GOOSE_MODEL</key><string>qwen3-coder-wms:latest</string>
     <key>OLLAMA_HOST</key><string>http://milai:11434</string>
     <key>PATH</key><string>/Users/namto/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>HOME</key><string>/Users/namto</string>

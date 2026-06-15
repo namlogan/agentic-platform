@@ -1,139 +1,112 @@
 # Agentic Platform — Setup Status
 
-**Last Updated:** 2026-06-13 — M2 ✅ M3 ✅
+**Last Updated:** 2026-06-15 — M0–M4 ✅ · M5 pending
 
 ---
 
-## Infrastructure Overview
+## Infrastructure
 
 | Component | Device | Role | Status |
 |-----------|--------|------|--------|
-| **M3** | MacBook Pro M3 | Architect | ✅ Active |
-| **M1** | Mac Mini M1 (`mac-mini-ca-namto`) | Orchestrator | ✅ Active |
-| **RTX** | RTX 5090 Server (`milai`, `100.107.129.18`) | Inference Backend | ✅ Active |
+| **M3** | MacBook Pro M3 | Architect console (Logan + Claude: plan & monitor) | ✅ |
+| **M1** | Mac Mini M1 (`mac-mini-ca-namto`) | Orchestrator — runs the pipeline 24/7 | ✅ |
+| **RTX** | RTX 5090 (`milai`, `100.107.129.18`) | Ollama inference + CI runner + dead-man | ✅ |
+
+Network: Tailscale mesh · `ssh milai` key-based · `gh auth` on M1 · Ollama at `http://milai:11434`.
 
 ---
 
-## Network Configuration
+## Architecture (as built)
 
-| Check | Status |
-|-------|--------|
-| Tailscale mesh (M1 ↔ RTX) | ✅ |
-| SSH key-based M1 → RTX (`ssh milai`) | ✅ |
-| GitHub CLI (`gh auth`) on M1 | ✅ |
-| RTX Ollama endpoint accessible from M1 | ✅ `http://100.107.129.18:11434` |
+The dispatch loop is a **deterministic bash driver** — not LLM-orchestrated. The LLM
+(qwen3-coder via aider) only writes code; every state transition is bash.
 
----
+```
+com.logan.goose-scheduler (every 15m)
+  └─ run-job.sh dispatch -- run-pipeline.sh <repos>
+       claim agent:ready → render task → aider implements →
+       run REAL test (ci-test.sh, same as CI) → 1 corrective retry →
+       pass: push + PR (Closes #N) + agent:review
+       fail: agent:blocked + log comment + Telegram
+```
 
-## Milestone Progress
+**Models on RTX** (Ollama):
+| Model | num_ctx | temp | Role |
+|-------|---------|------|------|
+| `qwen3-coder-wms:latest` | 32768 | 0.2 | **Brain + code executor** (Goose + aider) |
+| `qwen3-coder:30b-a3b-q4_K_M` | default | 0.7 | base (not used by the live pipeline) |
 
-### ✅ M0 — Network & Inventory (COMPLETE)
-**Acceptance:** `tailscale ping` both directions ✅ · `gh issue list` from M1 ✅
-
----
-
-### ✅ M1 — Inference Backend (COMPLETE)
-**Backend:** Ollama (instead of vLLM — simpler setup, functionally equivalent)
-
-| Check | Status |
-|-------|--------|
-| Ollama installed + systemd service | ✅ |
-| GPU detected: RTX 5090 (31.4 GiB VRAM) | ✅ |
-| Endpoint `http://milai:11434` accessible from M1 | ✅ |
-| Model `qwen2.5-coder:14b` (9 GB) loaded | ✅ |
-| Model `llama3.2:3b` (2 GB) loaded | ✅ Native tool calling ✅ |
-| Model `qwen2.5:7b` (4.7 GB) | 🔄 Downloading (~47%, ETA ~30 min) |
-| Inference speed | ✅ **140 tok/s** (target: ≥20) |
-
-**Note:** `qwen2.5-coder:14b` outputs tool calls as text (not structured), so it cannot be used as the Goose orchestrator brain. `llama3.2:3b` supports native tool calling but is too small for quality reasoning. `qwen2.5:7b` is the target model.
+**Executor:** aider (`ollama_chat/qwen3-coder-wms`, edit_format `whole`, num_ctx 32768).
+Config in `infra/m1/aider.conf.yml` + `aider.model.settings.yml` (live copies in `$HOME`).
 
 ---
 
-### ✅ M2 — Orchestrator Core (COMPLETE)
+## Live LaunchAgents / cron
 
-| Check | Status |
-|-------|--------|
-| Goose CLI v1.37.0 installed | ✅ `~/.local/bin/goose` |
-| Goose config (`~/.config/goose/config.yaml`) | ✅ Provider: `ollama`, Model: `qwen2.5:7b` |
-| Goose connects to RTX Ollama | ✅ |
-| Schedules registered | ✅ `dispatch-issues` (*/15min), `nightly-report` (06:30) |
-| GitHub labels created | ✅ All 9 labels in `namlogan/agentic-platform` |
-| **End-to-end dispatch test** | ✅ Issue #1 → PR #2 opened autonomously |
-
-**Executor:** aider + qwen2.5-coder:14b on RTX 5090 (auggie Enterprise non-interactive mode disabled by company admin; local executor is the permanent choice).
-
-**Acceptance:** Hand-labeled `agent:ready` issue → PR opened autonomously ✅ PR #2 merged 2026-06-13.
+| Job | Role | Cadence |
+|-----|------|---------|
+| `com.logan.goose-scheduler` | deterministic dispatch driver | every 15m |
+| `com.logan.goose-nightly` | digest issue (Goose, model `qwen3-coder-wms`) | 06:30 |
+| `com.logan.goose-watchdog` | health monitor → Telegram | every 15m |
+| `com.logan.telegram-control` | two-way Telegram command listener | KeepAlive |
+| `deadman.sh` (on RTX, cron) | cross-machine dead-man switch | every 15m |
 
 ---
 
-### ✅ M3 — Verification & CI (COMPLETE)
+## Milestones
 
-| Check | Status |
-|-------|--------|
-| `verify.sh` — Docker sandbox + LLM review | ✅ `passed:true, gaps:[]` on PR #2 |
-| Self-hosted runner `milai-rtx5090` | ✅ Online |
-| Branch protection on `main` | ✅ Requires `test` CI + 1 review |
-| CI workflow `.github/workflows/ci.yml` | ✅ `test: pass` on PR #2 |
-
----
-
-### ⏳ M4 — Scheduling & Ops (PENDING)
-Waiting for M3 → **M3 complete, M4 is next.**
+| Milestone | Status | Evidence |
+|-----------|--------|----------|
+| **M0** Network & inventory | ✅ | Tailscale, SSH, `gh auth` |
+| **M1** Inference backend | ✅ | Ollama on RTX, qwen3-coder, ~140 tok/s |
+| **M2** Orchestrator core | ✅ | agent:ready → PR autonomously (many) |
+| **M3** Verification & CI | ✅ | Real test gate in driver; **blocked path proven** (#19 → agent:blocked + log + Telegram); self-hosted runner + branch protection + CI |
+| **M4** Scheduling & ops | ✅ | launchd autostart, nightly digest (#5/#6), 3-layer alerting, Telegram remote control |
+| **M5** Pilot | ⏳ | Not started — real ≥5-issue project through the pipeline |
 
 ---
 
-### ⏳ M5 — Pilot (PENDING)
-Waiting for M4.
+## Observability & control
+
+- **Alerting (Telegram):** healthy = active heartbeat; silence = alarm. Layers:
+  heartbeat-on-success (`run-job.sh`), watchdog (`healthcheck.sh`), RTX dead-man
+  (`deadman.sh`). Config: `~/.config/agentic/alert.env` (M1) + `~/.agentic/alert.env` (RTX).
+- **Remote control (Telegram):** `/status`, `/dispatch`, `/retry N`, `/pause`, `/resume`,
+  `/help`; free-text → new `agent:ready` issue. Listener: `telegram-control.sh`.
 
 ---
 
----
+## Deprecated (superseded, kept for reference)
 
-## Model Decision
-
-| Model | Size | Tool Calling | Quality | Role |
-|-------|------|-------------|---------|------|
-| `qwen2.5-coder:14b` | 9 GB | ❌ Text-only | High for code | Code review LLM (verify.sh) |
-| `llama3.2:3b` | 2 GB | ✅ Structured | Low (too small) | Testing only |
-| `qwen2.5:7b` | 4.7 GB | ✅ Structured | Good | **Goose orchestrator brain** |
-
-**Final config:** Goose brain = `qwen2.5:7b` · LLM review = `qwen2.5-coder:14b`
+- `scripts/execute-task.sh` — old executor contract (bypassed in practice)
+- `scripts/verify.sh` — Docker+LLM verifier (replaced by the driver's test gate)
+- `recipes/dispatch-issues.yaml` — LLM-orchestrated dispatch (derailed; replaced by `run-pipeline.sh`)
 
 ---
 
-## Quick Commands
+## Quick commands
 
 ```bash
-# Check RTX inference
-ssh milai "ollama list"
-curl http://100.107.129.18:11434/api/tags
+# Inference
+ssh milai "ollama list"; curl http://milai:11434/api/tags
 
-# Check Goose
-~/.local/bin/goose doctor
-~/.local/bin/goose schedule list
+# Run a dispatch pass manually
+cd ~/agentic-platform
+bash scripts/run-pipeline.sh "namlogan/agentic-platform" "$HOME/agent-work"
 
-# Check runner
-gh api repos/namlogan/agentic-platform/actions/runners | jq '.runners[]|{name,status}'
+# Jobs
+launchctl list | grep -E "goose|telegram"
+tail -f ~/.config/agentic/state/last-dispatch.log
 
-# Monitor model download
-ssh milai "tail -f /tmp/qwen25-7b-pull.log 2>/dev/null | strings | grep '%'"
-
-# Run dispatch recipe manually
-cd ~/Desktop/agentic-platform
-~/.local/bin/goose run \
-  --no-session --max-turns 20 \
-  --recipe recipes/dispatch-issues.yaml \
-  --params REPOS=namlogan/agentic-platform \
-  --params BASE_DIR=$HOME/agent-work
+# Alerting / control test
+bash scripts/notify-telegram.sh test "ping"
+bash scripts/telegram-control.sh --handle "/status"
 ```
 
 ---
 
-## Next Steps
+## Next: M5 — Pilot
 
-1. ⏳ Wait for `qwen2.5:7b` download (~30 min)
-2. Update Goose config: `GOOSE_MODEL: qwen2.5:7b`
-3. Complete GitHub Actions runner registration
-4. Enable branch protection on `main`
-5. Run end-to-end dispatch test (Issue #1)
-6. Mark M2 + M3 complete if acceptance passes
+Plan a real ≥5-issue milestone (e.g. in `namlogan/warehouse-agentic`) with Claude,
+label `agent:ready`, and measure: % reaching `agent:review` unattended, blocked rate,
+throughput. Target: ≥80% autonomous, zero pushes outside `agent/*`.

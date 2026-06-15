@@ -1,6 +1,10 @@
+# ⚠️ DEPRECATED (2026-06-15): the live dispatch path is now scripts/run-pipeline.sh
+# (deterministic bash driver), launched by com.logan.goose-scheduler. This
+# LLM-orchestrated Goose recipe derailed in practice (skipped steps, stuck
+# agent:wip) and is no longer wired in. Kept for reference only.
 version: 1.0.0
 title: dispatch-issues
-description: Claim one agent:ready issue and run it through the full pipeline
+description: "[DEPRECATED] Claim one agent:ready issue and run it through the full pipeline"
 instructions: |
   You are the orchestrator for the agentic-platform pipeline. Work through these steps
   and use the developer extension to run shell commands.
