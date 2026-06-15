@@ -17,3 +17,7 @@ def ping():
 @app.get('/goodbye')
 def goodbye():
     return {'message': 'Goodbye from agentic-platform'}
+
+@app.get('/healthz')
+def healthz():
+    return {'ok': True}
