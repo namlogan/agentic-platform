@@ -18,6 +18,11 @@ def test_ping():
     assert response.status_code == 200
     assert response.json() == {'ping': 'pong'}
 
+def test_bye():
+    response = client.get('/bye')
+    assert response.status_code == 200
+    assert response.json() == {'bye': 'see you'}
+
 def test_goodbye():
     response = client.get('/goodbye')
     assert response.status_code == 200
