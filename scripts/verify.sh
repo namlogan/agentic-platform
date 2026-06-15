@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# ⚠️ DEPRECATED (2026-06-15): superseded by the test gate inside
+# scripts/run-pipeline.sh (runs the repo's real ci-test.sh, same as CI). This
+# Docker+LLM-review verifier was never invoked by the live pipeline. Kept for
+# reference / possible future sandbox-isolation use.
+#
 # Verify a worktree: run tests in Docker sandbox + LLM review pass.
 # Usage: verify.sh <repo> <issue-number> <worktree>
 #

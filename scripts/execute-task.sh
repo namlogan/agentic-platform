@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# ⚠️ DEPRECATED (2026-06-15): superseded by scripts/run-pipeline.sh, which calls
+# aider directly and gates on the real test suite. This LLM-orchestrated executor
+# contract was bypassed in practice and is kept only for reference / fallback.
+# Do not wire into the live pipeline.
+#
 # Executor interface — runs a task file inside a worktree and returns JSON.
 # Usage: execute-task.sh [--executor=auggie|claude-code|local] <worktree> <taskfile>
 #
