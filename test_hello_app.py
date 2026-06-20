@@ -22,3 +22,12 @@ def test_goodbye():
     response = client.get('/goodbye')
     assert response.status_code == 200
     assert response.json() == {'message': 'Goodbye from agentic-platform'}
+
+def test_project_status():
+    response = client.get('/project-status')
+    assert response.status_code == 200
+    data = response.json()
+    assert 'status' in data
+    assert 'timestamp' in data
+    assert 'services' in data
+    assert isinstance(data['services'], dict)
