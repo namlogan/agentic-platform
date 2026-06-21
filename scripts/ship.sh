@@ -43,6 +43,11 @@ refuse(){ log "REFUSED: $1"; emit "{\"status\":\"refused\",\"reason\":\"$1\"}"; 
 
 # ── preflight: kill-switch + daily cap ───────────────────────────────────────
 [ "${AUTO_SHIP:-0}" = "1" ] || refuse "AUTO_SHIP not enabled"
+# Per-repo allowlist: when AUTO_SHIP_REPOS is set, only those repos auto-ship
+# (keeps autonomy scoped — e.g. warehouse on, agentic-platform off).
+if [ -n "${AUTO_SHIP_REPOS:-}" ]; then
+  case " $AUTO_SHIP_REPOS " in *" $REPO "*) : ;; *) refuse "repo not in AUTO_SHIP_REPOS allowlist";; esac
+fi
 if [ -f "$STATE_DIR/PAUSED" ] || ! launchctl list 2>/dev/null | grep -q "$SCHEDULER"; then
   refuse "pipeline paused (kill-switch active)"
 fi

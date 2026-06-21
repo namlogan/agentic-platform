@@ -45,7 +45,9 @@ fi
 NUM=""; TITLE=""
 for cand in $(echo "$ISSUES" | jq -r '.[].number'); do
   body=$(echo "$ISSUES" | jq -r ".[] | select(.number==$cand) | .body // \"\"")
-  deps=$(printf '%s' "$body" | grep -ioE 'depends-on:[^\r\n]*' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+  # `|| true`: no Depends-on line means grep exits 1, which under set -e would
+  # abort the whole dispatcher — tolerate it (no deps = immediately claimable).
+  deps=$(printf '%s' "$body" | grep -ioE 'depends-on:[^\r\n]*' | grep -oE '#[0-9]+' | tr -d '#' | sort -u || true)
   unmet=""
   for d in $deps; do
     state=$(gh issue view "$d" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")

@@ -42,7 +42,11 @@ ship_sweep
 
 # ── 0b. MILESTONE CHECK — ship the product when a milestone is fully built ────
 if [ "${AUTO_SHIP:-0}" = "1" ]; then
-  for r in $REPOS; do bash "$HERE/milestone-status.sh" "$r" "$BASE_DIR" 2>>"$BASE_DIR/.milestone.log" || true; done
+  for r in $REPOS; do
+    # honour the same per-repo allowlist as ship.sh
+    if [ -n "${AUTO_SHIP_REPOS:-}" ]; then case " $AUTO_SHIP_REPOS " in *" $r "*) : ;; *) continue;; esac; fi
+    bash "$HERE/milestone-status.sh" "$r" "$BASE_DIR" 2>>"$BASE_DIR/.milestone.log" || true
+  done
 fi
 
 # ── 1. claim the top-priority agent:ready issue (first repo with work) ───────
