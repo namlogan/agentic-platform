@@ -17,3 +17,7 @@ def ping():
 @app.get('/goodbye')
 def goodbye():
     return {'message': 'Goodbye from agentic-platform'}
+
+@app.get('/version')
+def get_version():
+    return {"version": "1.0.0"}

@@ -22,3 +22,8 @@ def test_goodbye():
     response = client.get('/goodbye')
     assert response.status_code == 200
     assert response.json() == {'message': 'Goodbye from agentic-platform'}
+
+def test_version():
+    response = client.get('/version')
+    assert response.status_code == 200
+    assert response.json() == {"version": "1.0.0"}
