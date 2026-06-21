@@ -10,7 +10,7 @@
     <string>dispatch</string>
     <string>--</string>
     <string>/bin/bash</string>
-    <string>/Users/namto/agentic-platform/scripts/run-pipeline.sh</string>
+    <string>/Users/namto/agentic-platform/scripts/run-pipeline-roles.sh</string>
     <string>namlogan/agentic-platform namlogan/warehouse-agentic</string>
     <string>/Users/namto/agent-work</string>
   </array>
