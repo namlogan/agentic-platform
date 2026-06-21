@@ -22,3 +22,8 @@ def test_goodbye():
     response = client.get('/goodbye')
     assert response.status_code == 200
     assert response.json() == {'message': 'Goodbye from agentic-platform'}
+
+def test_add():
+    response = client.get('/add?a=2&b=3')
+    assert response.status_code == 200
+    assert response.json() == {"sum": 5}
