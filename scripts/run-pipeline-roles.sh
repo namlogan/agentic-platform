@@ -22,6 +22,24 @@ export OLLAMA_API_BASE="${OLLAMA_API_BASE:-http://milai:11434}"
 log() { echo "[pipeline-roles] $*" >&2; }
 notify() { bash "$HERE/notify-telegram.sh" "$@" >/dev/null 2>&1 || true; }
 
+# ── 0. SHIP SWEEP — ship any agent:review PR whose CI is now green ────────────
+# Runs before claiming new work so each tick advances the loop toward shipping.
+# ship.sh self-refuses PRs that aren't green/approved yet; they ship a later tick.
+ship_sweep() {
+  [ "${AUTO_SHIP:-0}" = "1" ] || return 0
+  local r iss pr
+  for r in $REPOS; do
+    for iss in $(gh issue list --repo "$r" --label agent:review --state open --json number -q '.[].number' 2>/dev/null); do
+      pr=$(gh pr list --repo "$r" --state open --json number,headRefName \
+            -q "[.[]|select(.headRefName|startswith(\"agent/$iss-\"))][0].number" 2>/dev/null)
+      [ -n "$pr" ] && [ "$pr" != "null" ] || continue
+      log "ship-sweep: issue #$iss / PR #$pr ($r)"
+      log "  $(bash "$HERE/ship.sh" "$r" "$pr" "$iss" "$BASE_DIR/$r/$iss" 2>>"$BASE_DIR/.ship-sweep.log")"
+    done
+  done
+}
+ship_sweep
+
 # ── 1. claim the top-priority agent:ready issue (first repo with work) ───────
 REPO=""; CLAIM=""
 for r in $REPOS; do
