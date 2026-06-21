@@ -42,6 +42,14 @@ emit() { printf '%s\n' "$1"; }   # final JSON to stdout
 TASK="$(cat "$TASKFILE")"
 BASE_SHA="$(git -C "$WORKTREE" rev-parse HEAD 2>/dev/null || echo "")"
 
+# ── retrieval context pack (augment + graphify), bounded & best-effort ────────
+CONTEXT=""
+if [ "${RETRIEVAL_ENABLED:-1}" = "1" ] && [ -x "$HERE/retrieve-context.sh" ]; then
+  log "CONTEXT — retrieving relevant code (augment + graphify)"
+  CONTEXT="$(bash "$HERE/retrieve-context.sh" "$WORKTREE" "$TASKFILE" 2>/dev/null || true)"
+  [ -n "$CONTEXT" ] && log "CONTEXT — ${#CONTEXT} chars" || log "CONTEXT — none (running context-free)"
+fi
+
 # ── test command (same resolution as run-pipeline.sh) ────────────────────────
 if [ -f "$WORKTREE/scripts/ci-test.sh" ]; then
   TEST_CMD="bash scripts/ci-test.sh"
@@ -90,8 +98,8 @@ creating/editing files directly. Do NOT ask questions or just describe a plan �
 full file contents in THIS response."
 
 build_prompt() {  # $1 = extra context (plan or feedback)
-  printf '%s\n\n=== IMPLEMENTATION PLAN (from reasoning layer) ===\n%s\n\n=== TASK ===\n%s\n\n%s\n' \
-    "$DIRECTIVE" "$PLAN" "$TASK" "$1"
+  printf '%s\n\n%s\n\n=== IMPLEMENTATION PLAN (from reasoning layer) ===\n%s\n\n=== TASK ===\n%s\n\n%s\n' \
+    "$DIRECTIVE" "$CONTEXT" "$PLAN" "$TASK" "$1"
 }
 
 code_pass_qwen() {    # $1 = extra context, $2 = logfile  (aider auto-commits)
