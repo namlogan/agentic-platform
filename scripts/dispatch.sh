@@ -40,10 +40,31 @@ if [[ -z "$ISSUES" || "$ISSUES" == "[]" ]]; then
   exit 1
 fi
 
-# Pick the first issue not currently wip (guard against races).
-ISSUE=$(echo "$ISSUES" | jq -r '.[0]')
-NUM=$(echo "$ISSUE"   | jq -r '.number')
-TITLE=$(echo "$ISSUE" | jq -r '.title')
+# Pick the highest-priority issue whose `Depends-on: #a, #b` are all CLOSED
+# (a dependency is satisfied once its PR is merged and the issue auto-closes).
+NUM=""; TITLE=""
+for cand in $(echo "$ISSUES" | jq -r '.[].number'); do
+  body=$(echo "$ISSUES" | jq -r ".[] | select(.number==$cand) | .body // \"\"")
+  deps=$(printf '%s' "$body" | grep -ioE 'depends-on:[^\r\n]*' | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+  unmet=""
+  for d in $deps; do
+    state=$(gh issue view "$d" --repo "$REPO" --json state -q .state 2>/dev/null || echo "UNKNOWN")
+    [ "$state" = "CLOSED" ] || unmet="$unmet #$d"
+  done
+  if [ -n "$unmet" ]; then
+    log "skip #$cand — waiting on unmet deps:$unmet"
+    continue
+  fi
+  NUM="$cand"
+  TITLE=$(echo "$ISSUES" | jq -r ".[] | select(.number==$cand) | .title")
+  break
+done
+
+if [[ -z "$NUM" ]]; then
+  log "No claimable agent:ready issue (all blocked by unmet dependencies)."
+  exit 1
+fi
+
 SLUG=$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//;s/-$//' | cut -c1-40)
 BRANCH="agent/${NUM}-${SLUG}"
 
