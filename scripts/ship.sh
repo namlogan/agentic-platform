@@ -33,7 +33,12 @@ mkdir -p "$STATE_DIR"
 
 log()  { echo "[ship] $*" >&2; }
 notify(){ bash "$HERE/notify-telegram.sh" "$@" >/dev/null 2>&1 || true; }
-emit() { printf '%s\n' "$1"; exit 0; }
+emit() {
+  printf '%s\n' "$1"
+  printf '{"ts":"%s","repo":"%s","issue":%s,"phase":"ship","result":%s}\n' \
+    "$(date -u +%FT%TZ)" "$REPO" "$ISSUE" "$1" >> "$STATE_DIR/audit.jsonl" 2>/dev/null || true
+  exit 0
+}
 refuse(){ log "REFUSED: $1"; emit "{\"status\":\"refused\",\"reason\":\"$1\"}"; }
 
 # ── preflight: kill-switch + daily cap ───────────────────────────────────────

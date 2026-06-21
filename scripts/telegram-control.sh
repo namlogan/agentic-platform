@@ -49,7 +49,16 @@ handle() {
 /pause — dừng scheduler (kill switch)
 /resume — bật lại scheduler
 /build <brief> — phân rã 1 brief sản phẩm thành milestone + nhiều issue
+/progress — tiến độ milestone (burndown)
 Hoặc nhắn mô tả 1 task → mình tạo issue agent:ready để pipeline làm."
+      ;;
+    /progress)
+      local prog
+      prog="$(gh api "repos/$PLATFORM_REPO/milestones?state=open" \
+        --jq '.[] | "• \(.title): \(.closed_issues)/\(.closed_issues+.open_issues) merged"' 2>/dev/null)"
+      [ -z "$prog" ] && prog="(không có milestone đang mở)"
+      send "🏭 Tiến độ milestone ($PLATFORM_REPO)
+$prog"
       ;;
     /build\ *)
       local brief heredir created

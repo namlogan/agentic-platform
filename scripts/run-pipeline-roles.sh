@@ -87,6 +87,12 @@ log "executor result: $RESULT"
 STATUS=$(echo "$RESULT"      | jq -r '.status')
 MODEL_CHAIN=$(echo "$RESULT" | jq -r '.model_chain | join(" → ")')
 
+# audit trail (one JSONL line per build attempt) for cost/throughput review
+_AUDIT="${AGENTIC_STATE_DIR:-$HOME/.config/agentic/state}/audit.jsonl"
+mkdir -p "$(dirname "$_AUDIT")" 2>/dev/null || true
+echo "$RESULT" | jq -c --arg ts "$(date -u +%FT%TZ)" --arg repo "$REPO" --argjson issue "$NUM" \
+  '{ts:$ts,repo:$repo,issue:$issue,phase:"build"} + {status,model_chain}' >> "$_AUDIT" 2>/dev/null || true
+
 # ── 4. gate ─────────────────────────────────────────────────────────────────
 NEW_COMMITS=$(git -C "$WORKTREE" rev-list --count "origin/$(default_branch)..HEAD" 2>/dev/null || echo 0)
 if [ "$STATUS" != "done" ]; then block "executor returned status=$STATUS"; exit 0; fi
