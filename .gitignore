@@ -2,3 +2,11 @@
 # alert secrets / local state
 .config/agentic/
 alert.env
+
+# generated graph / context / caches
+graphify-out/
+repomix-output.xml
+.token-savior-cache.json
+
+# local Claude Code config (permissions, hooks)
+.claude/
