@@ -113,7 +113,12 @@ code_pass_claude() {  # $1 = extra context, $2 = logfile  (claude -p edits but w
   ( cd "$WORKTREE" && claude -p "$prompt" --model "$CODER_CLAUDE_MODEL" \
       --dangerously-skip-permissions ) > "$2" 2>&1 || true
   if [ -n "$(git -C "$WORKTREE" status --porcelain)" ]; then
-    git -C "$WORKTREE" add -A >/dev/null 2>&1 || true
+    # Exclude stray binaries/artifacts a tool run may have downloaded into the
+    # worktree — `git add -A` would otherwise sweep them into the PR.
+    git -C "$WORKTREE" add -A -- . \
+      ':(exclude)*.pkg' ':(exclude)*.dmg' ':(exclude)*.zip' ':(exclude)*.tar.gz' \
+      ':(exclude)*.tgz' ':(exclude)*.so' ':(exclude)*.bin' ':(exclude).venv' ':(exclude)venv' \
+      >/dev/null 2>&1 || git -C "$WORKTREE" add -A >/dev/null 2>&1 || true
     git -C "$WORKTREE" commit -m "agent($CODER_CLAUDE_MODEL): code pass" >/dev/null 2>&1 || true
   fi
 }

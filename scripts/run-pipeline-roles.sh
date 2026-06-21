@@ -82,7 +82,9 @@ bash "$HERE/render-task.sh" "$REPO" "$NUM" "$WORKTREE" > "$WORKTREE/task.md"
 
 # keep scratch files out of git
 EXCL=$(git -C "$WORKTREE" rev-parse --git-path info/exclude 2>/dev/null)
-if [ -n "$EXCL" ]; then mkdir -p "$(dirname "$EXCL")"; printf '%s\n' task.md plan.md '.roles-*' '.aider*' '__pycache__' '.pytest_cache' >> "$EXCL"; fi
+if [ -n "$EXCL" ]; then mkdir -p "$(dirname "$EXCL")"; printf '%s\n' \
+  task.md plan.md '.roles-*' '.aider*' '__pycache__' '.pytest_cache' \
+  '*.pkg' '*.dmg' '*.zip' '*.tar.gz' '*.tgz' '*.so' '*.bin' '.venv' 'venv' '*.egg-info' >> "$EXCL"; fi
 
 # ── 3. role-split execution (reason → code → review → gate) ──────────────────
 log "executing role-split flow…"
